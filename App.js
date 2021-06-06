@@ -15,7 +15,7 @@ function CadastrarClientes(props) {
       <View style={styles.loginView}>
         <Text>Cadastrar Clientes</Text>
         <TextInput style={styles.cadastro} placeholder='Insira seu nome...' 
-          value={props.cliente.nome} onChangeText={(txt)=>{props.mudarTexto(txt, 'nome')}}/>
+          value={props.cliente.cliente} onChangeText={(txt)=>{props.mudarTexto(txt, 'cliente')}}/>
         <TextInput style={styles.cadastro} placeholder='Insira seu peso...' keyboardType='number-pad'
           value={props.cliente.peso} onChangeText={(txt)=>{props.mudarTexto(txt, 'peso')}}/>
         <TextInput style={styles.cadastro} placeholder='Insira seu altura...' keyboardType='number-pad'
@@ -35,12 +35,12 @@ function ListaClientes(props) {
   const listaDisplay = props.clientes.map(element => {
     return (
       <View style={styles.listaItem}>
-        <Text>{element.nome}</Text>
-        <Text>{element.peso}</Text>
-        <Text>{element.altura}</Text>
-        <Text>{element.idade}</Text>
-        <Text>{element.tmb}</Text>
-        <Text>{element.imc}</Text>
+        <Text>Cliente = {element.cliente}</Text>
+        <Text>Peso = {element.peso}</Text>
+        <Text>Altura = {element.altura}</Text>
+        <Text>Idade = {element.idade}</Text>
+        <Text>TMB = {element.tmb}</Text>
+        <Text>IMC = {element.imc}</Text>
       </View>
     ); 
   }); 
@@ -80,9 +80,9 @@ function ListaEquipamentos(props) {
   const listaDisplay = props.equipamentos.map(element => {
     return (
       <View style={styles.listaItem}>
-        <Text>{element.nome}</Text>
-        <Text>{element.tipo}</Text>
-        <Text>{element.quantidade}</Text>
+        <Text>Equipamento = {element.nome}</Text>
+        <Text>Tipo = {element.tipo}</Text>
+        <Text>Quantidade = {element.quantidade}</Text>
       </View>
     ); 
   }); 
@@ -122,9 +122,9 @@ function ListaAcademias(props) {
   const listaDisplay = props.academias.map(element => {
     return (
       <View style={styles.listaItem}>
-        <Text>{element.nome}</Text>
-        <Text>{element.bairro}</Text>
-        <Text>{element.logradouro}</Text>
+        <Text>Nome = {element.nome}</Text>
+        <Text>Bairro = {element.bairro}</Text>
+        <Text>Endereço = {element.logradouro}</Text>
       </View>
     ); 
   }); 
@@ -147,7 +147,7 @@ class Clientes extends React.Component {
     token: "",
   
     clienteAtual: { 
-      nome: "",
+      cliente: "",
       peso: "",
       altura: "",
       idade: "",
@@ -158,11 +158,34 @@ class Clientes extends React.Component {
 
   constructor(props) { 
     super(props);
-    // const token = props.route.param.token;
-    const {token} = props.route.params;
-    this.state.token = token;
+    //const token = props.route.param.token;
+    //const token = props.route.params;
+    this.state.token = props.route.params.token;
+    console.log("State token ==> ", this.state.token);
   }
-  
+
+  imcCalc(){
+    // Dividindo o peso pela altura ao quadrado
+    const p = this.state.clienteAtual.peso;
+    const alt = this.state.clienteAtual.altura;
+    const calculo = (p / (alt*alt));
+    const arredondado = parseFloat(calculo.toFixed(2));
+    this.inputChange(arredondado, 'imc');
+  }
+
+  tmbCalc(){
+    //Homens devem utilizar a seguinte a fórmula:
+    //66,5 + (13,75 x Peso) + (5,0 x Altura em cm) – (6,8 x Idade).
+    //Enquanto isso, mulheres devem realizar a fórmula seguinte:
+    //665,1 + (9,56 x Peso) + (1,8 x Altura em cm) – (4,7 x Idade).
+    const p = this.state.clienteAtual.peso;
+    const alt = this.state.clienteAtual.altura * 100;
+    const id = this.state.clienteAtual.idade;
+    const calculo = 66.5 + (13.75 * p) + (5.0 * alt) - (6.8 * id);
+    const arredondado = parseFloat(calculo.toFixed(2));
+    this.inputChange(arredondado, 'tmb');
+  }
+
   atualizarLista() { 
     const config = {
       headers: { 
@@ -193,6 +216,12 @@ class Clientes extends React.Component {
         authorization: "Bearer " + this.state.token,
       }
     }
+
+    this.imcCalc();
+    this.tmbCalc();
+
+    console.log("State Cliente Atual ==>", this.state.clienteAtual);
+    console.log("CFG ==> ", cfg);
     axios.post('https://kui-pizza.herokuapp.com/cliente/adicionar', this.state.clienteAtual, cfg)
     .then( (resposta)=> {
       if (resposta.status === 200) { 
@@ -204,6 +233,7 @@ class Clientes extends React.Component {
       }
     })
     .catch( (err) => {
+      console.log("Error ==> ", err);
       ToastAndroid.show("Houve um erro no servidor ao gravar o cliente", ToastAndroid.LONG);
       //alert("Houve um erro no servidor ao gravar o cliente");
     })
@@ -254,8 +284,8 @@ class Equipamentos extends React.Component {
   constructor(props) { 
     super(props);
     // const token = props.route.param.token;
-    const {token} = props.route.params;
-    this.state.token = token;
+    //const {token} = props.route.params;
+    this.state.token = props.route.params.token;
   }
   
   atualizarLista() { 
@@ -349,8 +379,8 @@ class Academias extends React.Component {
   constructor(props) { 
     super(props);
     // const token = props.route.param.token;
-    const {token} = props.route.params;
-    this.state.token = token;
+    //const {token} = props.route.params;
+    this.state.token = props.route.params.token;
   }
   
   atualizarLista() { 
@@ -383,6 +413,9 @@ class Academias extends React.Component {
         authorization: "Bearer " + this.state.token,
       }
     }
+    console.log("State Token ==> ", this.state.token);
+    console.log("State Academia Atual ==> ", this.state.academiaAtual);
+    console.log("CFG ==> ", cfg);
     axios.post('https://kui-pizza.herokuapp.com/academia/adicionar', this.state.academiaAtual, cfg)
     .then( (resposta)=> {
       if (resposta.status === 200) { 
@@ -395,6 +428,7 @@ class Academias extends React.Component {
     })
     .catch( (err) => {
       ToastAndroid.show("Houve um erro no servidor ao gravar a academia", ToastAndroid.LONG);
+      console.log("ERROR ==> ", err);
       //alert("Houve um erro no servidor ao gravar o cliente");
     })
   }
@@ -455,20 +489,20 @@ class Menu extends React.Component {
   constructor(props) { 
     super(props);
     // const token = props.route.param.token;
-    const {token} = props.route.params;
-    this.state.token = token;
+    //const {token} = props.route.params;
+    this.state.token = props.route.params;
   }
 
-  clientes(token) {
-    this.props.navigation.navigate("Clientes", {token});
+  clientes() {
+    this.props.navigation.navigate("Clientes", this.state.token);
   }
 
-  equipamentos(token){
-    this.props.navigation.navigate("Equipamentos", {token});
+  equipamentos(){
+    this.props.navigation.navigate("Equipamentos", this.state.token);
   }
 
-  academias(token){
-    this.props.navigation.navigate("Academias", {token});
+  academias(){
+    this.props.navigation.navigate("Academias", this.state.token);
   }
 
   render(){
